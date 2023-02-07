@@ -27,9 +27,15 @@ func TestMain(t *testing.T) {
 	}
 	defer conn.Close()
 
-	vec := Vectors{X: 100, Y: 150}
+	// read message back
+	_, p, err := conn.ReadMessage() // first read bulk of data
+	if err != nil {
+		t.Fatalf("Failed to read message: %v", err)
+	}
 
-	p, err := json.Marshal(vec)
+	vec := Vectors{X: "100", Y: "150", Type: "down"} // write data after it
+
+	p, err = json.Marshal(vec)
 	if err != nil {
 		t.Fatalf("Failed to encode json %v", err)
 	}
@@ -38,15 +44,9 @@ func TestMain(t *testing.T) {
 		t.Fatalf("Failed to send msg %v", err)
 	}
 
-	// read message back
-	_, p, err = conn.ReadMessage()
-	if err != nil {
-		t.Fatalf("Failed to read message: %v", err)
-	}
-
 	// Decode the JSON Response
 	var vec2 Vectors
-	if err := json.Unmarshal(p, &vec2); err != nil {
+	if err := json.Unmarshal(p, &vec2); err != nil { // echoed data
 		t.Fatalf("Failed to decode JSON: %v", err)
 	}
 
