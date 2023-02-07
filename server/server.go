@@ -9,12 +9,15 @@ import (
 )
 
 type Vectors struct {
-	X int `json:"x"`
-	Y int `json:"y"`
+	X    json.Number `json:"x"`
+	Y    json.Number `json:"y"`
+	Type string      `json:"type"`
 }
 
 // struct{} takes no byte, so used it here instead of bool
 var clients = make(map[*websocket.Conn]struct{})
+
+var VectorsArray []Vectors
 
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
@@ -35,6 +38,16 @@ func draw(res http.ResponseWriter, req *http.Request) {
 
 	clients[conn] = struct{}{} // create new client
 	fmt.Print("New client created \n")
+
+	// on connection open, send the data (x,y) made by other clients to the connected client to render the client
+	vectorsJSON, err := json.Marshal(VectorsArray)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	// bulk amount of data
+	conn.WriteMessage(websocket.TextMessage, vectorsJSON)
 
 	for { // loop forever to receive/send msg
 		messageType, p, err := conn.ReadMessage() // read if any client sends message
@@ -58,10 +71,21 @@ func draw(res http.ResponseWriter, req *http.Request) {
 			continue
 		}
 
-		fmt.Println("Received Vectors", points.X, points.Y)
+		fmt.Println("Received Vectors", points.X, points.Y, points.Type)
+
+		// add the current to the vectors
+		// useful when new client joins in
+		VectorsArray = append(VectorsArray, points)
+
+		// Encode the array of User structs as JSON
+		vectorsJSON, err := json.Marshal(points)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 
 		for client := range clients { // go thru every client and send the msg
-			err := client.WriteMessage(messageType, p) // broadcast
+			err := client.WriteMessage(messageType, vectorsJSON) // broadcast the current json value only
 
 			if err != nil {
 				client.Close()
