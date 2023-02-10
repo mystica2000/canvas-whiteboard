@@ -9,9 +9,10 @@ import (
 )
 
 type Vectors struct {
-	X    json.Number `json:"x"`
-	Y    json.Number `json:"y"`
-	Type string      `json:"type"`
+	X     json.Number `json:"x"`
+	Y     json.Number `json:"y"`
+	Type  string      `json:"type"`
+	Color string      `json:"color"`
 }
 
 // struct{} takes no byte, so used it here instead of bool
@@ -71,7 +72,7 @@ func draw(res http.ResponseWriter, req *http.Request) {
 			continue
 		}
 
-		fmt.Println("Received Vectors", points.X, points.Y, points.Type)
+		fmt.Println("Received Vectors", points.X, points.Y, points.Type, points.Color)
 
 		// add the current to the vectors
 		// useful when new client joins in

@@ -4,6 +4,7 @@ import "./index.css"
 const App: Component = () => {
 
   const [isDrawing, setIsDrawing] = createSignal<boolean>(false);
+  const [color, setColor] = createSignal("black");
   let canvasOffSetX: number, canvasOffSetY: number;
   let ctx: CanvasRenderingContext2D;
   let canvas: HTMLCanvasElement;
@@ -14,58 +15,73 @@ const App: Component = () => {
     canvas = document.getElementById("canvas") as HTMLCanvasElement;
     ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
     var rect: DOMRect = canvas.getBoundingClientRect();
-    ctx.lineWidth = 10;
-    ctx.lineCap = "round"
+
 
     canvasOffSetX = rect.left;
     canvasOffSetY = rect.top;
 
-    canvas.width = window.innerWidth - canvasOffSetX;
-    canvas.height = window.innerHeight - canvasOffSetY;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    // canvas.width = window.innerWidth - canvasOffSetX;
+    // canvas.height = window.innerHeight - canvasOffSetY;
 
     ws = new WebSocket("ws://localhost:8080");
     ws.onopen = (e) => {
-      console.log('opened',e)
+      console.log('opened', e)
     }
+
     ws.onmessage = (e) => {
 
       const obj = JSON.parse(e.data);
 
-      if(Array.isArray(obj)) {
-        obj.forEach((aObj: any) => {
-          if (aObj.type == "move") {
-            ctx.lineTo(aObj.x, aObj.y)
-            ctx.stroke()
-          } else if (aObj.type == "down") {
-            ctx.beginPath()
-            ctx.stroke()
-          }
-        })
-      } else {
-          if (obj.type == "move") {
-            ctx.lineTo(obj.x, obj.y)
-            ctx.stroke()
-          } else if (obj.type == "down") {
-            ctx.beginPath()
-            ctx.stroke()
-          }
+      if (obj != null) {
+        if (Array.isArray(obj)) {
+          obj.forEach((aObj: Message) => {
+            drawOnScreen(aObj);
+          })
+        } else {
+          drawOnScreen(obj);
+        }
       }
 
     }
   });
 
+  const drawOnScreen = (message: Message) => {
+    if (message.command == "draw") {
+      ctx.lineWidth = 5;
+      ctx.lineCap = "round"
+      ctx.imageSmoothingEnabled = true;
+      ctx.lineTo(message.x, message.y)
+      ctx.strokeStyle = message.color;
+      ctx.stroke()
+    } else if (message.command == "start") {
+      ctx.beginPath()
+      ctx.stroke()
+    } else {
+      ctx.beginPath();
+      ctx.stroke()
+    }
+  }
+
   const handleMouseDown = (e: MouseEvent) => {
     setIsDrawing(true);
+
     ws.send(JSON.stringify(
       {
-        type: 'down'
+        type: 'start',
       }))
   }
 
   const handleMouseUp = () => {
-    ctx.beginPath();
-    ctx.stroke()
+
+    ws.send(JSON.stringify(
+      {
+        type: 'stop',
+      }))
+
     setIsDrawing(false);
+
   }
 
   const handleMouseMove = (event: MouseEvent) => {
@@ -75,14 +91,23 @@ const App: Component = () => {
       {
         x: `${event.clientX - canvasOffSetX}`,
         y: `${event.clientY}`,
-        type: 'move'
+        command: 'draw',
+        color: color()
       }))
   }
 
+  const handleDoubleClick = (event:MouseEvent) => {
+    var x = event.clientX;
+    var y = event.clientY;
+
+    // can able to type text! on the (x,y) pixel
+    // can change font-size (bound 20px,30px,40px)
+ }
+
   return (
     <div class="container">
-      <div>Side bar</div>
-      <canvas id="canvas" onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}></canvas>
+      {/* <input type="color" value={color()} onChange={(e) => setColor(e.currentTarget.value)} /> */}
+      <canvas id="canvas" onDblClick={handleDoubleClick} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}></canvas>
     </div>
 
   );
