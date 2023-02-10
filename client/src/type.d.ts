@@ -1,4 +1,4 @@
-type state = "move" | "down"
+type state = "draw" | "start" | "end"
 
 
 interface Message {
