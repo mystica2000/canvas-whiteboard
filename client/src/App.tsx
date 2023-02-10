@@ -20,6 +20,7 @@ const App: Component = () => {
     canvasOffSetX = rect.left;
     canvasOffSetY = rect.top;
 
+
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     // canvas.width = window.innerWidth - canvasOffSetX;
