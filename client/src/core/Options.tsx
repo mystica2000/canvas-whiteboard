@@ -1,14 +1,14 @@
-import { Component, createSignal, onMount } from 'solid-js';
-import "./index.css"
+import { Component, createSignal, onMount, Setter } from 'solid-js';
+import "../index.css"
 
 // gonna allow stroke,color,option,eraser.
 // destroy everything.. :P
-const Options: Component = () => {
+export function Options(props:{color:string,setColor:Setter<string>,stroke:number,setStroke:Setter<string>}) {
 
   return (
-    <section>
+    <div class="options">
         <input type="color" />
-
-    </section>
+         {props.color}
+    </div>
   )
 };
