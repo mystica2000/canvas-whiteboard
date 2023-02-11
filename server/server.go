@@ -11,7 +11,7 @@ import (
 type Vectors struct {
 	X     json.Number `json:"x"`
 	Y     json.Number `json:"y"`
-	Type  string      `json:"type"`
+	Type  string      `json:"command"`
 	Color string      `json:"color"`
 }
 

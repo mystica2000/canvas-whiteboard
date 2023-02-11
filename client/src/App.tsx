@@ -1,10 +1,13 @@
 import { Component, createSignal, onMount } from 'solid-js';
 import "./index.css"
+import { Options } from './core/Options';
 
 const App: Component = () => {
 
   const [isDrawing, setIsDrawing] = createSignal<boolean>(false);
   const [color, setColor] = createSignal("black");
+  const [stroke, setStroke] = createSignal(5);
+
   let canvasOffSetX: number, canvasOffSetY: number;
   let ctx: CanvasRenderingContext2D;
   let canvas: HTMLCanvasElement;
@@ -15,24 +18,19 @@ const App: Component = () => {
     canvas = document.getElementById("canvas") as HTMLCanvasElement;
     ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
     var rect: DOMRect = canvas.getBoundingClientRect();
-
-
-    canvasOffSetX = rect.left;
-    canvasOffSetY = rect.top;
-
-
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    // canvas.width = window.innerWidth - canvasOffSetX;
-    // canvas.height = window.innerHeight - canvasOffSetY;
-
     ws = new WebSocket("ws://localhost:8080");
     ws.onopen = (e) => {
       console.log('opened', e)
     }
 
-    ws.onmessage = (e) => {
+    canvasOffSetX = rect.left;
+    canvasOffSetY = rect.top;
 
+
+    canvas.height = window.innerHeight - canvasOffSetY;
+    canvas.width = window.innerWidth - canvasOffSetX;
+
+    ws.onmessage = (e) => {
       const obj = JSON.parse(e.data);
 
       if (obj != null) {
@@ -91,22 +89,33 @@ const App: Component = () => {
     ws.send(JSON.stringify(
       {
         x: `${event.clientX - canvasOffSetX}`,
-        y: `${event.clientY}`,
+        y: `${event.clientY - canvasOffSetY}`,
         command: 'draw',
         color: color()
       }))
   }
 
-  const handleDoubleClick = (event:MouseEvent) => {
+  const handleDoubleClick = (event: MouseEvent) => {
     var x = event.clientX;
     var y = event.clientY;
 
     // can able to type text! on the (x,y) pixel
     // can change font-size (bound 20px,30px,40px)
- }
+  }
+
+  const getWidth = () => {
+    return window.innerWidth;
+  }
+
+  const getHeight = () => {
+    return window.innerHeight;
+  }
 
   return (
     <div class="container">
+      <div class="header">
+        <Options setColor={setColor} color={color()} setStroke={setStroke} stroke={stroke()} />
+      </div>
       {/* <input type="color" value={color()} onChange={(e) => setColor(e.currentTarget.value)} /> */}
       <canvas id="canvas" onDblClick={handleDoubleClick} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}></canvas>
     </div>
