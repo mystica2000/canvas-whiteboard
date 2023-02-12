@@ -1,4 +1,4 @@
-import { Component, createSignal, onMount } from 'solid-js';
+import { Component, createSignal, onMount, Show } from 'solid-js';
 import "./index.css"
 import { Options } from './core/Options';
 
@@ -7,28 +7,51 @@ const App: Component = () => {
   const [isDrawing, setIsDrawing] = createSignal<boolean>(false);
   const [color, setColor] = createSignal("black");
   const [stroke, setStroke] = createSignal(5);
+  const [displayError, setDisplayError] = createSignal(false);
 
   let canvasOffSetX: number, canvasOffSetY: number;
   let ctx: CanvasRenderingContext2D;
-  let canvas: HTMLCanvasElement;
+  let canvas: any;
   let ws: WebSocket;
 
+  let first: boolean = true;
+
+  const debounce = (callback: any) => {
+    var timer: number;
+
+    return () => {
+      if (timer) clearTimeout(timer)
+      timer = setTimeout(callback, 1000)
+    }
+  }
 
   onMount(() => {
-    canvas = document.getElementById("canvas") as HTMLCanvasElement;
-    ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
-    var rect: DOMRect = canvas.getBoundingClientRect();
-    ws = new WebSocket("ws://localhost:8080");
-    ws.onopen = (e) => {
-      console.log('opened', e)
+
+    ws = new WebSocket("ws://localhost:8080")
+
+    ws.onclose = (e) => {
+      if (e.code == 1006) {
+        setDisplayError(true);
+      }
     }
 
-    canvasOffSetX = rect.left;
-    canvasOffSetY = rect.top;
+    const handleResize = () => {
+      var rect: DOMRect = canvas.getBoundingClientRect();
+      ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
+      canvasOffSetX = rect.left;
+      canvasOffSetY = rect.top;
 
-    canvas.height = window.innerHeight - canvasOffSetY;
-    canvas.width = window.innerWidth - canvasOffSetX;
+      canvas.height = window.innerHeight - canvasOffSetY;
+      canvas.width = window.innerWidth - canvasOffSetX;
+
+      if (first == false) {
+        ws.send("all")
+      }
+    }
+    window.addEventListener('resize', debounce(handleResize))
+    handleResize();
+    first = false;
 
     ws.onmessage = (e) => {
       const obj = JSON.parse(e.data);
@@ -42,15 +65,14 @@ const App: Component = () => {
           drawOnScreen(obj);
         }
       }
-
     }
   });
 
   const drawOnScreen = (message: Message) => {
     if (message.command == "draw") {
-      ctx.lineWidth = 5;
       ctx.lineCap = "round"
       ctx.imageSmoothingEnabled = true;
+      ctx.lineWidth = message.stroke;
       ctx.lineTo(message.x, message.y)
       ctx.strokeStyle = message.color;
       ctx.stroke()
@@ -63,7 +85,9 @@ const App: Component = () => {
     }
   }
 
-  const handleMouseDown = (e: MouseEvent) => {
+  const handleMouseDown = (event: MouseEvent | TouchEvent) => {
+    event.preventDefault();
+
     setIsDrawing(true);
 
     ws.send(JSON.stringify(
@@ -72,7 +96,8 @@ const App: Component = () => {
       }))
   }
 
-  const handleMouseUp = () => {
+  const handleMouseUp = (event: MouseEvent | TouchEvent) => {
+    event.preventDefault();
 
     ws.send(JSON.stringify(
       {
@@ -83,43 +108,50 @@ const App: Component = () => {
 
   }
 
-  const handleMouseMove = (event: MouseEvent) => {
+  const handleMouseMove = (event: MouseEvent | TouchEvent) => {
+
+    event.preventDefault();
     if (!isDrawing()) return;
 
-    ws.send(JSON.stringify(
-      {
-        x: `${event.clientX - canvasOffSetX}`,
-        y: `${event.clientY - canvasOffSetY}`,
+
+    if (event instanceof MouseEvent) {
+
+      let message = {
+        x: event.clientX - canvasOffSetX,
+        y: event.clientY - canvasOffSetY,
         command: 'draw',
-        color: color()
-      }))
-  }
+        color: color(),
+        stroke: stroke()
+      }
 
-  const handleDoubleClick = (event: MouseEvent) => {
-    var x = event.clientX;
-    var y = event.clientY;
+      ws.send(JSON.stringify(message))
+    } else {
+      let message = {
+        x: event.touches[0].clientX - canvasOffSetX,
+        y: event.touches[0].clientY - canvasOffSetY,
+        command: 'draw',
+        color: color(),
+        stroke: stroke()
+      }
+      ws.send(JSON.stringify(message))
+    }
 
-    // can able to type text! on the (x,y) pixel
-    // can change font-size (bound 20px,30px,40px)
-  }
-
-  const getWidth = () => {
-    return window.innerWidth;
-  }
-
-  const getHeight = () => {
-    return window.innerHeight;
   }
 
   return (
-    <div class="container">
-      <div class="header">
+    <Show when={displayError() == false} fallback={<div>Server is at max capacity :/ try again later!</div>} >
+      <div class="container">
         <Options setColor={setColor} color={color()} setStroke={setStroke} stroke={stroke()} />
+        <canvas ref={canvas} id="canvas"
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onTouchStart={handleMouseDown}
+          onTouchMove={handleMouseMove}
+          onTouchEnd={handleMouseUp}
+        ></canvas>
       </div>
-      {/* <input type="color" value={color()} onChange={(e) => setColor(e.currentTarget.value)} /> */}
-      <canvas id="canvas" onDblClick={handleDoubleClick} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}></canvas>
-    </div>
-
+    </Show>
   );
 };
 
