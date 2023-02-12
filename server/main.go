@@ -157,6 +157,9 @@ func handleIdle() {
 
 func main() {
 	// Create Http Server
+	http.HandleFunc("/servertest", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("server is up"))
+	})
 	http.HandleFunc("/", draw)
 
 	go handleIdle()
