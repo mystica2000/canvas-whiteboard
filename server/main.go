@@ -23,8 +23,8 @@ var clients = make(map[*websocket.Conn]time.Time)
 var mux sync.Mutex
 
 // concurrent user
-var semaphore = make(chan struct{}, 2)
-var idleTimeout = time.Minute * 1
+var semaphore = make(chan struct{}, 100)
+var idleTimeout = time.Minute * 2
 
 var VectorsArray []Vectors
 
@@ -141,7 +141,7 @@ func draw(res http.ResponseWriter, req *http.Request) {
 
 func handleIdle() {
 	for {
-		time.Sleep(1 * time.Minute)
+		time.Sleep(50 * time.Second)
 		mux.Lock()
 
 		for conn, t := range clients {
@@ -160,7 +160,7 @@ func main() {
 	http.HandleFunc("/", draw)
 
 	go handleIdle()
-	fmt.Println("WebSocket server running on localhost:8080")
+	fmt.Println("WebSocket server running!")
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
 		fmt.Println(err)
