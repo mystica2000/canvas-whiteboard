@@ -27,7 +27,7 @@ const App: Component = () => {
 
   onMount(() => {
 
-    ws = new WebSocket("ws:https://canvas-whiteboard.up.railway.app/")
+    ws = new WebSocket("wss:canvas-whiteboard.up.railway.app/")
 
     ws.onclose = (e) => {
       if (e.code == 1006) {
