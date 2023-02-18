@@ -164,7 +164,7 @@ func main() {
 
 	go handleIdle()
 	fmt.Println("WebSocket server running!")
-	err := http.ListenAndServe(":8080", nil)
+	err := http.ListenAndServe("0.0.0.0:$PORT", nil)
 	if err != nil {
 		fmt.Println(err)
 	}
