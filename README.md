@@ -20,12 +20,17 @@ Web Socket acts Central Server that broadcasts the (x,y) vector points to the co
   - Then on every change, web sockets sends the data to the ws server + gets the changes made by other clients and renders on the screen.
 
 
-### Todo:
+### Supports:
 
-- Text on canvas
 - Touch support
 - smooth curve 
 - option for color/font-size/stroke width
+
+
+
+https://user-images.githubusercontent.com/45729256/219873892-17a98693-5532-4a51-8b48-5be0464f848f.mp4
+
+
 
 ### Extensions
 - Can enter Room Code and Collab with others
