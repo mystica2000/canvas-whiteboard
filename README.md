@@ -26,7 +26,7 @@ Web Socket acts Central Server that broadcasts the (x,y) vector points to the co
 - smooth curve 
 - option for color/font-size/stroke width
 
-
+Thought Process: https://twitter.com/CuriouZmystee/status/1623052597287612417?s=20
 
 https://user-images.githubusercontent.com/45729256/219873892-17a98693-5532-4a51-8b48-5be0464f848f.mp4
 
